@@ -1,2 +1,6 @@
 data
 CHAID-master/*
+*.zip
+*.pdf
+outputs/*
+venv/*
