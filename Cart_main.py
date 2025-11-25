@@ -8,12 +8,18 @@ df = pd.read_csv("data\\processed_bank_data_final.csv")
 
 target = "TransactionType"
 
-feature_cols = [c for c in df.columns if c not in 
-               [target, "dataset_group",
-                "TransactionType_Credit", "TransactionType_Debit"]]
+feature_cols = [
+    c for c in df.columns
+    if c not in [
+        target,
+        "dataset_group",
+        "TransactionType_Credit",
+        "TransactionType_Debit"
+    ]
+]
 
 X = df[feature_cols]
-y = df[target].astype(str)  
+y = df[target].astype(str)
 
 kf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 
@@ -25,6 +31,8 @@ for train_idx, test_idx in kf.split(X, y):
 
     model = DecisionTreeClassifier(
         criterion="gini",
+        max_depth=5,
+        min_samples_leaf=50,
         random_state=42
     )
     model.fit(X_train, y_train)
@@ -37,8 +45,12 @@ for train_idx, test_idx in kf.split(X, y):
     f1_list.append(f1_score(y_test, y_pred, average="weighted", zero_division=0))
 
     y_test_bin = (y_test == "Credit").astype(int)
-    y_pred_bin = (y_pred == "Credit").astype(int)
-    auc_list.append(roc_auc_score(y_test_bin, y_pred_bin))
+
+    classes = model.classes_
+    pos_idx = np.where(classes == "Credit")[0][0]
+    y_score = model.predict_proba(X_test)[:, pos_idx]
+
+    auc_list.append(roc_auc_score(y_test_bin, y_score))
 
 print("Model: CART")
 print(f"Accuracy : {np.mean(acc_list):.4f}")
